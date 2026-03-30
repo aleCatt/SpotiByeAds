@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#1DB954"
+        android:pathData="M54,54m-28,0a28,28 0,1 1,56 0a28,28 0,1 1,-56 0" />
+
+    <!-- Skip-forward icon (double triangle) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M43,40 L55,54 L43,68 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M57,40 L69,54 L57,68 Z" />
+</vector>
