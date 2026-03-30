@@ -2,6 +2,8 @@
 
 > ⚠️ **WARNING**: This application was completely **vibe-coded** by an AI! Expect bugs, edge case failures, and perhaps some code that doesn't make perfect sense! Use at your own risk.
 
+### [📥 Click Here to Download SpotiByeAds APK](https://github.com/aleCatt/SpotiByeAds/raw/main/SpotiByeAds.apk)
+
 An Android app that automatically detects and force-stops Spotify advertisements. 
 
 Because Android prevents standard apps from force-stopping Foreground Services (like music players), SpotiByeAds uses **Shizuku** to get ADB-level shell permissions. This allows the app to kill and resume the Spotify player silently and instantly, completely bypassing the ad.
