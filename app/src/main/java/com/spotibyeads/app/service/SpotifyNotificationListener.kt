@@ -119,9 +119,10 @@ class SpotifyNotificationListener : NotificationListenerService() {
         }
 
         // Some ads put "Advertisement" in the title, others put it in the text. Let's check both!
-        val isAd = title.equals("Advertisement", ignoreCase = true) || 
-                   text.equals("Advertisement", ignoreCase = true) ||
-                   title.equals("Spotify", ignoreCase = true) && text.equals("Spotify", ignoreCase = true)
+        // We use .contains() because the text can be "Advertisement • 2 of 2"
+        val isAd = title.contains("Advertisement", ignoreCase = true) || 
+                   text.contains("Advertisement", ignoreCase = true) ||
+                   (title.equals("Spotify", ignoreCase = true) && text.contains("Spotify", ignoreCase = true))
 
         if (isAd) {
             AdSkipLog.log("🎯 Ad detected! Triggering skip...")
