@@ -72,7 +72,7 @@ class SpotifyNotificationListener : NotificationListenerService() {
         private const val SPOTIFY_PACKAGE = "com.spotify.music"
         private const val AD_TITLE = "Advertisement"
         private const val KILL_DELAY_MS = 1500L
-        private const val RELAUNCH_DELAY_MS = 2000L
+        private const val RELAUNCH_DELAY_MS = 4000L
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────
@@ -156,10 +156,16 @@ class SpotifyNotificationListener : NotificationListenerService() {
                 AdSkipLog.log("🔄 Relaunching Spotify…")
                 runShizukuShell("monkey -p $SPOTIFY_PACKAGE -c android.intent.category.LAUNCHER 1")
 
-                // 4. Wait for Spotify to initialise
+                // 4. Wait for Spotify to intensely initialize
                 delay(RELAUNCH_DELAY_MS)
 
-                // 5. Send play command via Shizuku (Keycode 126 = MEDIA_PLAY)
+                // 5. Send NEXT command to bypass the repeated last song
+                AdSkipLog.log("⏭ Skipping repeated track…")
+                runShizukuShell("input keyevent 87")
+                
+                delay(500)
+
+                // 6. Send play command via Shizuku (Keycode 126 = MEDIA_PLAY) just in case
                 AdSkipLog.log("▶ Sending play command…")
                 runShizukuShell("input keyevent 126")
 
