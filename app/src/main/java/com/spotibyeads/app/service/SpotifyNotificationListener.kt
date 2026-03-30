@@ -143,21 +143,7 @@ class SpotifyNotificationListener : NotificationListenerService() {
                 AdSkipLog.log("⏹ Force-stopping Spotify via Shizuku…")
                 
                 if (Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    // Shizuku.newProcess is marked private in API v13+, so we reflect it:
-                    val method = rikka.shizuku.Shizuku::class.java.getDeclaredMethod(
-                        "newProcess",
-                        Array<String>::class.java,
-                        Array<String>::class.java,
-                        String::class.java
-                    )
-                    method.isAccessible = true
-                    val process = method.invoke(
-                        null,
-                        arrayOf("sh", "-c", "am force-stop $SPOTIFY_PACKAGE"),
-                        null,
-                        null
-                    ) as Process
-                    process.waitFor()
+                    runShizukuShell("am force-stop $SPOTIFY_PACKAGE")
                 } else {
                     AdSkipLog.log("❌ Shizuku not connected or permitted! Please check app.")
                     return@launch
@@ -166,25 +152,16 @@ class SpotifyNotificationListener : NotificationListenerService() {
                 // 2. Wait for process cleanup
                 delay(KILL_DELAY_MS)
 
-                // 3. Relaunch Spotify
+                // 3. Relaunch Spotify via Shizuku (bypasses Android background constraints)
                 AdSkipLog.log("🔄 Relaunching Spotify…")
-                val launchIntent = packageManager.getLaunchIntentForPackage(SPOTIFY_PACKAGE)
-                if (launchIntent != null) {
-                    launchIntent.addFlags(
-                        Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    )
-                    startActivity(launchIntent)
-                } else {
-                    AdSkipLog.log("❌ Spotify not found on this device")
-                    return@launch
-                }
+                runShizukuShell("monkey -p $SPOTIFY_PACKAGE -c android.intent.category.LAUNCHER 1")
 
                 // 4. Wait for Spotify to initialise
                 delay(RELAUNCH_DELAY_MS)
 
-                // 5. Send play command
+                // 5. Send play command via Shizuku (Keycode 126 = MEDIA_PLAY)
                 AdSkipLog.log("▶ Sending play command…")
-                sendPlayCommand()
+                runShizukuShell("input keyevent 126")
 
                 AdSkipLog.incrementAdsSkipped()
                 AdSkipLog.log("✅ Ad skipped successfully!")
@@ -202,11 +179,20 @@ class SpotifyNotificationListener : NotificationListenerService() {
         }
     }
 
-    private fun sendPlayCommand() {
-        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val down = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY)
-        val up = KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY)
-        audioManager.dispatchMediaKeyEvent(down)
-        audioManager.dispatchMediaKeyEvent(up)
+    private fun runShizukuShell(command: String) {
+        val method = rikka.shizuku.Shizuku::class.java.getDeclaredMethod(
+            "newProcess",
+            Array<String>::class.java,
+            Array<String>::class.java,
+            String::class.java
+        )
+        method.isAccessible = true
+        val process = method.invoke(
+            null,
+            arrayOf("sh", "-c", command),
+            null,
+            null
+        ) as Process
+        process.waitFor()
     }
 }
