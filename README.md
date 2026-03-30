@@ -12,7 +12,7 @@ An Android app that automatically detects and skips Spotify advertisements by:
 
 ## How to Install & Use
 
-1. **Build and Install** the APK on your Android device (e.g., using Android Studio or `./gradlew assembleDebug`).
+1. **Install the APK** on your Android device by downloading `SpotiByeAds.apk` from the root of this repository (or build it yourself using `./gradlew assembleDebug`).
 2. **Open SpotiByeAds** → tap **"Grant Permission"** → enable **SpotiByeAds Ad Detection** in the system settings.
 3. **Play Spotify** — the app monitors in the background. When an ad plays, it will automatically force-stop Spotify, relaunch it, and send a play command.
 4. **Check the Activity Log** in the app to see detected ads and actions taken.
