@@ -9,6 +9,7 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.view.KeyEvent
+import rikka.shizuku.Shizuku
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -138,10 +139,29 @@ class SpotifyNotificationListener : NotificationListenerService() {
 
         scope.launch {
             try {
-                // 1. Kill Spotify background processes
-                AdSkipLog.log("⏹ Stopping Spotify…")
-                val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-                am.killBackgroundProcesses(SPOTIFY_PACKAGE)
+                // 1. Kill Spotify via Shizuku
+                AdSkipLog.log("⏹ Force-stopping Spotify via Shizuku…")
+                
+                if (Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    // Shizuku.newProcess is marked private in API v13+, so we reflect it:
+                    val method = rikka.shizuku.Shizuku::class.java.getDeclaredMethod(
+                        "newProcess",
+                        Array<String>::class.java,
+                        Array<String>::class.java,
+                        String::class.java
+                    )
+                    method.isAccessible = true
+                    val process = method.invoke(
+                        null,
+                        arrayOf("sh", "-c", "am force-stop $SPOTIFY_PACKAGE"),
+                        null,
+                        null
+                    ) as Process
+                    process.waitFor()
+                } else {
+                    AdSkipLog.log("❌ Shizuku not connected or permitted! Please check app.")
+                    return@launch
+                }
 
                 // 2. Wait for process cleanup
                 delay(KILL_DELAY_MS)
@@ -170,7 +190,11 @@ class SpotifyNotificationListener : NotificationListenerService() {
                 AdSkipLog.log("✅ Ad skipped successfully!")
                 Log.i(TAG, "Ad skipped")
             } catch (e: Exception) {
-                AdSkipLog.log("❌ Error: ${e.message}")
+                if (e is SecurityException && e.message?.contains("Shizuku") == true) {
+                    AdSkipLog.log("❌ Shizuku Permission Denied!")
+                } else {
+                    AdSkipLog.log("❌ Error: ${e.message}")
+                }
                 Log.e(TAG, "Skip failed", e)
             } finally {
                 isProcessing = false

@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import com.spotibyeads.app.service.AdSkipLog
 import com.spotibyeads.app.service.SpotifyNotificationListener
 import com.spotibyeads.app.ui.theme.SpotiByeAdsTheme
+import rikka.shizuku.Shizuku
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,6 +84,7 @@ fun SpotiByeAdsApp() {
     val adsSkipped by AdSkipLog.adsSkipped.collectAsState()
 
     val hasPermission = remember { mutableStateOf(isNotificationAccessGranted(context)) }
+    val hasShizuku = remember { mutableStateOf(checkShizukuPermission()) }
     val isEnabled = remember {
         mutableStateOf(
             context.getSharedPreferences("spotibyeads", Context.MODE_PRIVATE)
@@ -94,6 +96,7 @@ fun SpotiByeAdsApp() {
     LaunchedEffect(Unit) {
         while (true) {
             hasPermission.value = isNotificationAccessGranted(context)
+            hasShizuku.value = checkShizukuPermission()
             kotlinx.coroutines.delay(2000)
         }
     }
@@ -130,10 +133,22 @@ fun SpotiByeAdsApp() {
             // ── Status card ──────────────────────────────────────────
             StatusCard(
                 hasPermission = hasPermission.value,
+                hasShizuku = hasShizuku.value,
                 isConnected = isConnected,
                 isEnabled = isEnabled.value,
                 onGrantPermission = {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                },
+                onRequestShizuku = {
+                    try {
+                        if (Shizuku.pingBinder()) {
+                            Shizuku.requestPermission(1)
+                        } else {
+                            AdSkipLog.log("❌ Shizuku Manager is not running.")
+                        }
+                    } catch (e: Exception) {
+                        AdSkipLog.log("❌ Shizuku error: ${e.message}")
+                    }
                 },
                 onToggle = { enabled ->
                     isEnabled.value = enabled
@@ -182,9 +197,11 @@ fun SpotiByeAdsApp() {
 @Composable
 private fun StatusCard(
     hasPermission: Boolean,
+    hasShizuku: Boolean,
     isConnected: Boolean,
     isEnabled: Boolean,
     onGrantPermission: () -> Unit,
+    onRequestShizuku: () -> Unit,
     onToggle: (Boolean) -> Unit,
 ) {
     Card(
@@ -209,6 +226,29 @@ private fun StatusCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Grant Permission", fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 14.dp),
+                color = Color(0xFF2A2A2A)
+            )
+
+            // Shizuku row
+            StatusRow(
+                isActive = hasShizuku,
+                label = if (hasShizuku) "Shizuku connected" else "Shizuku access required"
+            )
+
+            if (!hasShizuku) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = onRequestShizuku,
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1DB954)),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Grant Shizuku Access", fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -380,4 +420,12 @@ private fun isNotificationAccessGranted(context: Context): Boolean {
     ) ?: return false
     val cn = ComponentName(context, SpotifyNotificationListener::class.java)
     return flat.contains(cn.flattenToString())
+}
+
+private fun checkShizukuPermission(): Boolean {
+    return try {
+        Shizuku.pingBinder() && Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+    } catch (e: Exception) {
+        false
+    }
 }
