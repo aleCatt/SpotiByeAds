@@ -19,7 +19,7 @@ You must have **Shizuku** installed and running on your Android device (via Wire
 3. **Open SpotiByeAds** — the app will ask you for two permissions:
    - **Notification Access:** So it can read what track Spotify is playing.
    - **Shizuku Access:** So it has the power to force-stop Spotify when an ad plays.
-4. **Play Spotify** — the app will idle in the background. When an ad appears, it will instantly force close Spotify, relaunch it, and send a resume command!
+4. **Play Spotify** — the app will idle in the background. When an ad appears, it will instantly force close Spotify and relaunch the app, **leaving the player paused**. This acts as a feature, giving you a quiet breather before you manually press play to resume your music schedule!
 
 ## Privacy & Safety
 This app is open-source and operates entirely on your device. It does not connect to the internet, nor does it log any data outside of the on-screen Activity tracker.

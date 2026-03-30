@@ -156,22 +156,9 @@ class SpotifyNotificationListener : NotificationListenerService() {
                 AdSkipLog.log("🔄 Relaunching Spotify…")
                 runShizukuShell("monkey -p $SPOTIFY_PACKAGE -c android.intent.category.LAUNCHER 1")
 
-                // 4. Wait for Spotify to intensely initialize
-                delay(RELAUNCH_DELAY_MS)
-
-                // 5. Send NEXT command to bypass the repeated last song
-                AdSkipLog.log("⏭ Skipping repeated track…")
-                runShizukuShell("input keyevent 87")
-                
-                delay(500)
-
-                // 6. Send play command via Shizuku (Keycode 126 = MEDIA_PLAY) just in case
-                AdSkipLog.log("▶ Sending play command…")
-                runShizukuShell("input keyevent 126")
-
                 AdSkipLog.incrementAdsSkipped()
-                AdSkipLog.log("✅ Ad skipped successfully!")
-                Log.i(TAG, "Ad skipped")
+                AdSkipLog.log("✅ Ad skipped! Press play when ready.")
+                Log.i(TAG, "Ad skipped, waiting for manual play")
             } catch (e: Exception) {
                 if (e is SecurityException && e.message?.contains("Shizuku") == true) {
                     AdSkipLog.log("❌ Shizuku Permission Denied!")
