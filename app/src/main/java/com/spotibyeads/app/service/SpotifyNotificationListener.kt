@@ -97,6 +97,8 @@ class SpotifyNotificationListener : NotificationListenerService() {
 
     // ── Notification callback ────────────────────────────────────────
 
+    private var lastLoggedTitle = ""
+
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
         if (sbn.packageName != SPOTIFY_PACKAGE) return
@@ -107,12 +109,22 @@ class SpotifyNotificationListener : NotificationListenerService() {
         if (!prefs.getBoolean("enabled", true)) return
 
         val extras = sbn.notification.extras ?: return
-        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: return
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: "Unknown Title"
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: "Unknown Text"
 
-        Log.d(TAG, "Spotify notification: title=\"$title\"")
+        // Log any title change to the UI so we can see what Spotify is sending!
+        if (title != lastLoggedTitle) {
+            AdSkipLog.log("🎵 Spotify update: Title='$title' | Text='$text'")
+            lastLoggedTitle = title
+        }
 
-        if (title == AD_TITLE) {
-            AdSkipLog.log("🎯 Ad detected: \"$title\"")
+        // Some ads put "Advertisement" in the title, others put it in the text. Let's check both!
+        val isAd = title.equals("Advertisement", ignoreCase = true) || 
+                   text.equals("Advertisement", ignoreCase = true) ||
+                   title.equals("Spotify", ignoreCase = true) && text.equals("Spotify", ignoreCase = true)
+
+        if (isAd) {
+            AdSkipLog.log("🎯 Ad detected! Triggering skip...")
             skipAd()
         }
     }
